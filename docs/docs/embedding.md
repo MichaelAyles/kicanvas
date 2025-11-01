@@ -157,7 +157,7 @@ This example shows how to use `<kicanvas-source>` along with inline KiCad data. 
 - `src` - the URL of the document to embed. If you want to show multiple documents within a single viewer, you can use multiple child `<kicanvas-source>` elements.
 - `type` - when providing the file source inline, this explicitly sets the file type. If not specified, KiCanvas will attempt to determine the type automatically. If specified, it should be one of `schematic`, `board`, `project`, or `worksheet`.
 - `name` - when providing the file source inline, this explicitly sets the file name. This is typically only necessary when there are multiple files within a project, as KiCad uses the file name to link schematic sheets, drawing sheets, and PCBs together. If unspecified, KiCanvas will generate a file name like `inline_0.kicad_sch`.
-- `theme` - sets the color theme to use, valid values are `kicad` and `witchhazel`. ⚠️
+- `theme` - sets the color theme to use, valid values are `kicad` and `witchhazel`.
 - `zoom` - sets the initial view into the document. ⚠️
     - `objects` - zooms to show all visible objects (default). ⚠️
     - `page` - zooms to show the entire page. ⚠️

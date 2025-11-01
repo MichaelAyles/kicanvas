@@ -33,6 +33,7 @@ interface ViewerElement extends HTMLElement {
     viewer: Viewer;
     load(src: ProjectPage): Promise<void>;
     disableinteraction: boolean;
+    theme: string;
 }
 
 /**
@@ -41,7 +42,7 @@ interface ViewerElement extends HTMLElement {
 export abstract class KCViewerAppElement<
     ViewerElementT extends ViewerElement,
 > extends KCUIElement {
-    #viewer_elm: ViewerElementT;
+    protected viewer_elm: ViewerElementT;
     #activity_bar: KCUIActivitySideBarElement | null;
 
     project: Project;
@@ -53,7 +54,7 @@ export abstract class KCViewerAppElement<
     }
 
     get viewer() {
-        return this.#viewer_elm.viewer;
+        return this.viewer_elm.viewer;
     }
 
     @attribute({ type: String })
@@ -64,6 +65,21 @@ export abstract class KCViewerAppElement<
 
     @attribute({ type: Boolean })
     sidebarcollapsed: boolean;
+
+    @attribute({
+        type: String,
+        on_change: function (
+            this: KCViewerAppElement<any>,
+            old_value: string | null,
+            new_value: string | null,
+        ) {
+            // When theme attribute changes, propagate to viewer element
+            if (this.viewer_elm && old_value !== new_value && new_value) {
+                this.viewer_elm.theme = new_value;
+            }
+        },
+    })
+    theme: string;
 
     override connectedCallback() {
         this.hidden = true;
@@ -130,7 +146,7 @@ export abstract class KCViewerAppElement<
     async load(src: ProjectPage) {
         await this.viewerReady;
         if (this.can_load(src)) {
-            await this.#viewer_elm.load(src);
+            await this.viewer_elm.load(src);
             this.hidden = false;
         } else {
             this.hidden = true;
@@ -197,8 +213,11 @@ export abstract class KCViewerAppElement<
                 : { fullscreen: true, download: true, flipview: true },
         );
 
-        this.#viewer_elm = this.make_viewer_element();
-        this.#viewer_elm.disableinteraction = controls == "none";
+        this.viewer_elm = this.make_viewer_element();
+        this.viewer_elm.disableinteraction = controls == "none";
+        if (this.theme) {
+            this.viewer_elm.theme = this.theme;
+        }
 
         let resizer = null;
 
@@ -256,7 +275,7 @@ export abstract class KCViewerAppElement<
 
         return html`<kc-ui-split-view vertical>
             <kc-ui-view class="grow">
-                ${top_toolbar} ${this.#viewer_elm} ${bottom_toolbar}
+                ${top_toolbar} ${this.viewer_elm} ${bottom_toolbar}
             </kc-ui-view>
             ${resizer} ${this.#activity_bar}
         </kc-ui-split-view>`;
