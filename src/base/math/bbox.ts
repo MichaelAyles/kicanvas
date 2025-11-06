@@ -227,6 +227,18 @@ export class BBox {
     }
 
     /**
+     * @returns true if this box intersects with another
+     */
+    intersects(other: BBox): boolean {
+        return !(
+            this.x2 < other.x ||
+            this.x > other.x2 ||
+            this.y2 < other.y ||
+            this.y > other.y2
+        );
+    }
+
+    /**
      * @returns true if the point is within the bounding box.
      */
     contains_point(v: Vec2) {
