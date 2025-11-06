@@ -104,9 +104,16 @@ function needs_quoting(str: string): boolean {
         "uuid", "lib_id", "unit", "instances", "project", "path", "reference",
         "value", "footprint", "in_bom", "on_board", "dnp", "fields_autoplaced",
         "exclude_from_sim", "embedded_fonts",
+        // Schematic item keywords
+        "wire", "junction", "no_connect", "bus_entry", "bus", "label", "global_label",
+        "hierarchical_label", "netclass_flag", "text_box",
+        // Graphical shape keywords
+        "rectangle", "circle", "arc", "polyline", "text", "start", "end", "mid",
+        "center", "radius", "angle",
         // Atom values
         "yes", "no", "hide", "left", "right", "center", "top", "bottom",
         "none", "default", "solid", "dashed", "dotted",
+        "background", "outline", "filled",
         "passive", "line", "input", "output", "bidirectional", "power_in", "power_out",
         "open_collector", "open_emitter", "tri_state", "unspecified",
         // Angles and special numbers (leave as-is)
