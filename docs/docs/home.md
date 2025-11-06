@@ -12,6 +12,27 @@ You can also use KiCanvas on your own websites using the [embedding API](embeddi
 
 KiCanvas is developed by [Thea Flowers](https://thea.codes) with financial support from her [sponsors].
 
+## Features
+
+### Box Selection and Clipboard Copy
+
+KiCanvas supports interactive box selection and clipboard copy for schematics:
+
+-   **Box Selection**: Click and drag to select multiple schematic elements including symbols, wires, junctions, labels, text, and graphical shapes
+-   **Copy to Clipboard**: Press `Ctrl+C` (or `Cmd+C` on Mac) to copy selected items in KiCad-compatible S-expression format
+-   **Paste into KiCad**: Copied elements can be pasted directly into KiCad schematics with full fidelity, including library symbol definitions
+-   **Clear Selection**: Press `Escape` to deselect all items
+
+Supported elements for clipboard copy:
+
+-   Symbols with library definitions
+-   Wires and wire networks
+-   Junctions with attributes
+-   Labels (global, hierarchical, and local)
+-   Graphical rectangles and shapes
+-   Text annotations with formatting
+-   Power symbols
+
 [KiCanvas]: http://kicanvas.org/home/
 [KiCAD]: https://kicad.org
 [file an issue]: https://github.com/theacodes/kicanvas/issues/new/choose

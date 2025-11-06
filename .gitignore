@@ -4,3 +4,4 @@ dist/
 www/kicanvas
 coverage/
 esbuild-meta.json
+.claude/

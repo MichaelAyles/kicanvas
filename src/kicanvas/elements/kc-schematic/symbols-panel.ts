@@ -55,7 +55,9 @@ export class KCSchematicSymbolsPanelElement extends KCUIElement {
         this.addDisposable(
             this.viewer.addEventListener(KiCanvasSelectEvent.type, () => {
                 updating_selected = true;
-                this.menu.selected = this.viewer.selected?.context.uuid ?? null;
+                // Only update if the selected item is a symbol (has a uuid)
+                const context = this.viewer.selected?.context;
+                this.menu.selected = context?.uuid ?? null;
                 updating_selected = false;
             }),
         );
