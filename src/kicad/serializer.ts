@@ -172,6 +172,7 @@ function needs_quoting(str: string): boolean {
         "text_box",
         "diameter",
         "color",
+        "shape",
         // Graphical shape keywords
         "rectangle",
         "circle",

@@ -50,6 +50,10 @@ jobs:
         run: mkdocs build
         working-directory: docs
 
+      - name: Copy KiCanvas build to docs site
+        run: |
+          cp -r build/* docs/site/
+
       - name: Upload pages as an artifact
         uses: actions/upload-pages-artifact@v3
         with:
