@@ -93,7 +93,8 @@ export abstract class Viewer extends EventTarget {
             this.disposables.add(
                 listen(this.canvas, "mousemove", (e) => {
                     this.on_mouse_change(e);
-                    if (this.#is_box_selecting) {
+                    // Always check for box selection when mouse is down
+                    if (this.#mouse_down_position) {
                         this.on_box_selection_move(e);
                     }
                 }),
@@ -114,7 +115,7 @@ export abstract class Viewer extends EventTarget {
             );
 
             this.disposables.add(
-                listen(this.canvas, "mouseup", (e) => {
+                listen(document, "mouseup", (e) => {
                     if (e.button === 0) { // Left button only
                         this.on_mouse_up(e);
                     }
@@ -231,7 +232,13 @@ export abstract class Viewer extends EventTarget {
 
         const selected_items = new Set<any>();
 
-        for (const layer of this.layers.interactive_layers()) {
+        // Query ALL layers, not just interactive layers, to capture wires, junctions, labels, etc.
+        for (const layer of this.layers.in_order()) {
+            // Skip non-visual layers
+            if (!layer.visible || !layer.bboxes || layer.bboxes.size === 0) {
+                continue;
+            }
+
             for (const [item, bbox] of layer.bboxes.entries()) {
                 // Check if bbox is fully or partially contained
                 if (selection_bbox.contains(bbox) || selection_bbox.intersects(bbox)) {
@@ -240,6 +247,7 @@ export abstract class Viewer extends EventTarget {
             }
         }
 
+        console.log(`Box selection found ${selected_items.size} items`);
         this.select_items(selected_items);
     }
 
@@ -251,29 +259,80 @@ export abstract class Viewer extends EventTarget {
         // Import serializer
         const { list_to_string } = await import("../../kicad/serializer");
 
-        const s_expressions: string[] = [];
+        const lib_symbols = new Map(); // lib_id -> lib_symbol definition
+        const schematic_items: string[] = [];
+        const symbol_instances: any[] = [];
 
+        // First pass: collect items and identify what we need
         for (const item of this.#selected_items) {
-            if (item && item["_raw_expr"]) {
-                // Use stored raw S-expression
-                s_expressions.push(list_to_string(item["_raw_expr"]));
+            if (!item || !item["_raw_expr"]) continue;
+
+            const expr = item["_raw_expr"];
+            if (!Array.isArray(expr) || expr.length === 0) continue;
+
+            const item_type = expr[0];
+
+            // Skip items that are not valid schematic elements
+            // (e.g., drawing sheet rectangles, computed elements, etc.)
+            const skip_types = ["rect", "rectangle", "image", "bitmap"];
+            if (skip_types.includes(item_type)) {
+                console.log(`Skipping ${item_type} - not a schematic element`);
+                continue;
+            }
+
+            const serialized = list_to_string(expr);
+
+            // If this is a placed symbol instance (has lib_id), we need its library definition
+            if (item_type === "symbol" && item.lib_id && item.lib_symbol) {
+                // Add the library symbol definition if we don't have it yet
+                if (!lib_symbols.has(item.lib_id)) {
+                    const lib_symbol_expr = item.lib_symbol["_raw_expr"];
+                    if (lib_symbol_expr) {
+                        lib_symbols.set(item.lib_id, list_to_string(lib_symbol_expr));
+                    }
+                }
+
+                // Add this symbol instance
+                schematic_items.push(serialized);
+                symbol_instances.push(item);
+            } else {
+                // Wire, junction, label, text, etc - add directly
+                schematic_items.push(serialized);
             }
         }
 
-        if (s_expressions.length === 0) {
+        if (lib_symbols.size === 0 && schematic_items.length === 0) {
             console.warn("No serializable items selected");
             return;
         }
 
-        const text = s_expressions.join("\n");
+        // Build the KiCad clipboard format
+        let text = "";
 
-        // Copy to clipboard
+        // 1. Library symbol definitions
+        if (lib_symbols.size > 0) {
+            text += "(lib_symbols\n";
+            text += Array.from(lib_symbols.values())
+                .map(s => "  " + s.replace(/\n/g, "\n  "))
+                .join("\n");
+            text += "\n)\n\n";
+        }
+
+        // 2. Schematic items (wires, junctions, placed symbols, etc.)
+        text += schematic_items.join("\n");
+
+        // Copy to clipboard as plain text (browsers don't support custom MIME types)
         try {
             await navigator.clipboard.writeText(text);
-            console.log(`Copied ${s_expressions.length} item(s) to clipboard`);
+            console.log(`Copied ${this.#selected_items.size} item(s) to clipboard`);
+            console.log(`  - ${lib_symbols.size} library symbol(s)`);
+            console.log(`  - ${schematic_items.length} schematic item(s)`);
+            console.log(`  - ${symbol_instances.length} symbol instance(s)`);
+            console.log("\n=== FULL CLIPBOARD CONTENT ===");
+            console.log(text);
+            console.log("=== END CLIPBOARD CONTENT ===");
         } catch (err) {
             console.error("Failed to copy to clipboard:", err);
-            // Fallback: show in console for manual copy
             console.log("Copy this text manually:");
             console.log(text);
         }

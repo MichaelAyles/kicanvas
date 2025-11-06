@@ -8,10 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageThemeSelector = document.getElementById('page-theme-selector');
     const kicanvasThemeSelector = document.getElementById('kicanvas-theme-selector');
 
-    // Get dynamic viewers (excluding the fixed theme examples)
+    // Get the viewer
     const dynamicViewer = document.getElementById('dynamic-viewer');
-    const boardViewer = document.getElementById('board-viewer');
-    const currentThemeDisplay = document.getElementById('current-theme');
 
     // Store current theme state
     let currentPageTheme = 'light';
@@ -60,23 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Update KiCanvas viewer themes
+     * Update KiCanvas viewer theme
      */
     function updateKiCanvasTheme() {
         const theme = getEffectiveKiCanvasTheme();
 
         if (dynamicViewer) {
-            console.log('Setting dynamic viewer theme to:', theme);
+            console.log('Setting viewer theme to:', theme);
             dynamicViewer.theme = theme;
-        }
-        if (boardViewer) {
-            console.log('Setting board viewer theme to:', theme);
-            boardViewer.theme = theme;
-        }
-
-        // Update display
-        if (currentThemeDisplay) {
-            currentThemeDisplay.textContent = theme;
         }
 
         console.log(`KiCanvas theme updated to: ${theme}`);
@@ -139,27 +128,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Wait for all viewers to be loaded
+     * Wait for viewer to be loaded
      */
     async function waitForViewersToLoad() {
-        const viewers = [dynamicViewer, boardViewer].filter(v => v);
+        if (!dynamicViewer) return;
 
-        console.log('Waiting for viewers to load...', viewers);
+        console.log('Waiting for viewer to load...');
 
-        for (const viewer of viewers) {
-            console.log('Checking viewer:', viewer.id, 'loaded:', viewer.loaded);
-            if (!viewer.loaded) {
-                console.log('Waiting for load event on:', viewer.id);
-                await new Promise((resolve) => {
-                    viewer.addEventListener('kicanvas:load', () => {
-                        console.log('Load event received for:', viewer.id);
-                        resolve();
-                    }, { once: true });
-                });
-            }
+        if (!dynamicViewer.loaded) {
+            console.log('Waiting for load event...');
+            await new Promise((resolve) => {
+                dynamicViewer.addEventListener('kicanvas:load', () => {
+                    console.log('Load event received');
+                    resolve();
+                }, { once: true });
+            });
         }
 
-        console.log('All viewers loaded and ready for theme changes');
+        console.log('Viewer loaded and ready for theme changes');
 
         // Add a small delay to ensure internal state is ready
         await new Promise(resolve => setTimeout(resolve, 100));
