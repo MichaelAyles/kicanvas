@@ -304,6 +304,9 @@ export const P = {
 export type Parseable = string | List;
 
 export function parse_expr(expr: string | List, ...defs: PropertyDefinition[]) {
+    // Store the original expression for later serialization
+    const original_expr = Array.isArray(expr) ? expr : null;
+
     if (is_string(expr)) {
         log.info(`Parsing expression with ${expr.length} chars`);
         expr = listify(expr);
@@ -383,6 +386,11 @@ export function parse_expr(expr: string | List, ...defs: PropertyDefinition[]) {
         const value = def.fn(out, def.name, element);
 
         out[def.name] = value;
+    }
+
+    // Store the raw expression for serialization
+    if (original_expr) {
+        out["_raw_expr"] = original_expr;
     }
 
     return out;
