@@ -273,8 +273,8 @@ export abstract class Viewer extends EventTarget {
             const item_type = expr[0];
 
             // Skip items that are not valid schematic elements
-            // (e.g., drawing sheet rectangles, computed elements, etc.)
-            const skip_types = ["rect", "rectangle", "image", "bitmap"];
+            // (e.g., drawing sheet elements, computed elements, etc.)
+            const skip_types = ["rect", "image", "bitmap"];
             if (skip_types.includes(item_type)) {
                 console.log(`Skipping ${item_type} - not a schematic element`);
                 continue;

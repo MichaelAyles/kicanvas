@@ -106,15 +106,19 @@ function needs_quoting(str: string): boolean {
         "exclude_from_sim", "embedded_fonts",
         // Schematic item keywords
         "wire", "junction", "no_connect", "bus_entry", "bus", "label", "global_label",
-        "hierarchical_label", "netclass_flag", "text_box",
+        "hierarchical_label", "netclass_flag", "text_box", "diameter", "color",
         // Graphical shape keywords
         "rectangle", "circle", "arc", "polyline", "text", "start", "end", "mid",
         "center", "radius", "angle",
+        // Symbol attributes
+        "power", "power_in", "power_out",
+        // Font/text attributes
+        "thickness", "bold", "italic",
         // Atom values
         "yes", "no", "hide", "left", "right", "center", "top", "bottom",
         "none", "default", "solid", "dashed", "dotted",
         "background", "outline", "filled",
-        "passive", "line", "input", "output", "bidirectional", "power_in", "power_out",
+        "passive", "line", "input", "output", "bidirectional",
         "open_collector", "open_emitter", "tri_state", "unspecified",
         // Angles and special numbers (leave as-is)
         "0", "90", "180", "270",
