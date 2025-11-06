@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>KiCanvas Theme Demo</title>
+        <link rel="stylesheet" href="./theme-demo.css" />
+    </head>
+
+    <body class="theme-light">
+        <header>
+            <h1>KiCanvas Theme Demo</h1>
+            <div class="theme-controls">
+                <label>
+                    <span>Page Theme:</span>
+                    <select id="page-theme-selector">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">Auto (System)</option>
+                    </select>
+                </label>
+                <label>
+                    <span>KiCanvas Theme:</span>
+                    <select id="kicanvas-theme-selector">
+                        <option value="kicad">KiCad (Light)</option>
+                        <option value="witchhazel">Witch Hazel (Dark)</option>
+                        <option value="page">Follow Page Theme</option>
+                    </select>
+                </label>
+            </div>
+        </header>
+
+        <main>
+            <section>
+                <h2>Box Selection Demo</h2>
+                <p>
+                    <strong>Try it out!</strong> Click and drag to select
+                    multiple items, then press <kbd>Ctrl+C</kbd> to copy.
+                </p>
+                <ul>
+                    <li>
+                        <strong>Box Selection:</strong> Click and drag to select
+                        multiple items
+                    </li>
+                    <li>
+                        <strong>Copy:</strong> Press <kbd>Ctrl+C</kbd> (or
+                        <kbd>Cmd+C</kbd> on Mac) to copy as S-expressions
+                    </li>
+                    <li>
+                        <strong>Clear:</strong> Press <kbd>Escape</kbd> to clear
+                        selection
+                    </li>
+                </ul>
+            </section>
+
+            <div class="viewer-container viewer-single">
+                <kicanvas-embed
+                    id="dynamic-viewer"
+                    src="examples/helium.kicad_sch"
+                    controls="full">
+                </kicanvas-embed>
+            </div>
+        </main>
+
+        <footer>
+            <p>
+                KiCanvas - A web-based viewer for KiCad files |
+                <a href="https://github.com/theacodes/kicanvas" target="_blank">
+                    GitHub
+                </a>
+            </p>
+        </footer>
+
+        <script type="module" src="./kicanvas/kicanvas.js"></script>
+        <script type="module" src="./theme-demo.js"></script>
+    </body>
+</html>

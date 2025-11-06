@@ -304,6 +304,9 @@ export const P = {
 export type Parseable = string | List;
 
 export function parse_expr(expr: string | List, ...defs: PropertyDefinition[]) {
+    // Store the original expression for later serialization
+    const original_expr = Array.isArray(expr) ? expr : null;
+
     if (is_string(expr)) {
         log.info(`Parsing expression with ${expr.length} chars`);
         expr = listify(expr);
@@ -383,6 +386,35 @@ export function parse_expr(expr: string | List, ...defs: PropertyDefinition[]) {
         const value = def.fn(out, def.name, element);
 
         out[def.name] = value;
+    }
+
+    // Store the raw expression for serialization - only for copyable schematic elements
+    if (
+        original_expr &&
+        Array.isArray(original_expr) &&
+        original_expr.length > 0
+    ) {
+        const element_type = original_expr[0];
+        const copyable_types = [
+            "symbol",
+            "wire",
+            "junction",
+            "no_connect",
+            "bus_entry",
+            "bus",
+            "label",
+            "global_label",
+            "hierarchical_label",
+            "text",
+            "rectangle",
+            "circle",
+            "arc",
+            "polyline",
+        ];
+
+        if (copyable_types.includes(element_type)) {
+            out["_raw_expr"] = original_expr;
+        }
     }
 
     return out;
