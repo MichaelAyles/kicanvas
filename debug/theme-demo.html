@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>KiCanvas Theme Demo</title>
+        <link rel="stylesheet" href="./theme-demo.css" />
+    </head>
+
+    <body class="theme-light">
+        <header>
+            <h1>KiCanvas Theme Demo</h1>
+            <div class="theme-controls">
+                <label>
+                    <span>Page Theme:</span>
+                    <select id="page-theme-selector">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">Auto (System)</option>
+                    </select>
+                </label>
+                <label>
+                    <span>KiCanvas Theme:</span>
+                    <select id="kicanvas-theme-selector">
+                        <option value="kicad">KiCad (Light)</option>
+                        <option value="witchhazel">Witch Hazel (Dark)</option>
+                        <option value="page">Follow Page Theme</option>
+                    </select>
+                </label>
+            </div>
+        </header>
+
+        <main>
+            <section>
+                <h2>Interactive Theme Switching</h2>
+                <p>
+                    This demo showcases the new <code>theme</code> attribute for
+                    <code>&lt;kicanvas-embed&gt;</code> elements. Use the controls
+                    above to switch between light and dark themes for both the
+                    page and the KiCanvas viewers.
+                </p>
+                <p>
+                    The <strong>Page Theme</strong> selector changes the overall
+                    page appearance, while the <strong>KiCanvas Theme</strong>
+                    selector controls the schematic viewer themes below. You can
+                    also set KiCanvas to follow the page theme automatically.
+                </p>
+            </section>
+
+            <section>
+                <h2>Fixed Theme Examples</h2>
+                <p>These viewers demonstrate the available themes with fixed settings:</p>
+
+                <div class="viewer-grid">
+                    <div class="viewer-container">
+                        <h3>KiCad Theme (Light)</h3>
+                        <kicanvas-embed
+                            id="kicad-viewer"
+                            src="examples/helium.kicad_sch"
+                            controls="basic"
+                            theme="kicad">
+                        </kicanvas-embed>
+                        <p class="caption">
+                            Fixed to <code>theme="kicad"</code> - Uses KiCad's
+                            default light color scheme
+                        </p>
+                    </div>
+
+                    <div class="viewer-container">
+                        <h3>Witch Hazel Theme (Dark)</h3>
+                        <kicanvas-embed
+                            id="witchhazel-viewer"
+                            src="examples/helium.kicad_sch"
+                            controls="basic"
+                            theme="witchhazel">
+                        </kicanvas-embed>
+                        <p class="caption">
+                            Fixed to <code>theme="witchhazel"</code> - Uses a dark
+                            purple color scheme
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Dynamic Theme (Controlled by Page Theme)</h2>
+                <p>
+                    This viewer changes its theme based on the KiCanvas theme selector above.
+                    It demonstrates dynamic theme switching via the <code>theme</code> attribute.
+                </p>
+
+                <div class="viewer-container viewer-single">
+                    <kicanvas-embed
+                        id="dynamic-viewer"
+                        src="examples/pins.kicad_sch"
+                        controls="full">
+                    </kicanvas-embed>
+                    <p class="caption">
+                        Dynamic theme controlled by JavaScript -
+                        Current theme: <strong id="current-theme">kicad</strong>
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Box Selection Feature</h2>
+                <p>
+                    <strong>New!</strong> All viewers now support box selection and
+                    clipboard copy:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Box Selection:</strong> Click and drag with the left
+                        mouse button to select multiple items
+                    </li>
+                    <li>
+                        <strong>Copy:</strong> Press <kbd>Ctrl+C</kbd> (or
+                        <kbd>Cmd+C</kbd> on Mac) to copy selected items as
+                        S-expressions to the clipboard
+                    </li>
+                    <li>
+                        <strong>Clear Selection:</strong> Press <kbd>Escape</kbd> to
+                        clear the selection
+                    </li>
+                    <li>
+                        <strong>Single Selection:</strong> Click without dragging to
+                        select a single item
+                    </li>
+                </ul>
+                <p>
+                    Try it out in any of the viewers above! The selection rectangle
+                    appears in blue while dragging, and selected items are
+                    highlighted in white.
+                </p>
+            </section>
+
+            <section>
+                <h2>PCB Example</h2>
+                <p>Theme switching works for both schematics and PCB layouts:</p>
+
+                <div class="viewer-container viewer-single">
+                    <kicanvas-embed
+                        id="board-viewer"
+                        src="examples/starfish.kicad_pcb"
+                        controls="full">
+                    </kicanvas-embed>
+                    <p class="caption">
+                        PCB layout with dynamic theme support
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Technical Details</h2>
+                <div class="info-box">
+                    <h3>Using the Theme Attribute</h3>
+                    <p>
+                        The <code>theme</code> attribute can be set on
+                        <code>&lt;kicanvas-embed&gt;</code> elements:
+                    </p>
+                    <pre><code>&lt;kicanvas-embed src="file.kicad_sch" theme="kicad"&gt;&lt;/kicanvas-embed&gt;
+&lt;kicanvas-embed src="file.kicad_sch" theme="witchhazel"&gt;&lt;/kicanvas-embed&gt;</code></pre>
+
+                    <h3>Available Themes</h3>
+                    <ul>
+                        <li>
+                            <code>kicad</code> - KiCad's default light theme with
+                            traditional colors
+                        </li>
+                        <li>
+                            <code>witchhazel</code> - A dark purple theme with
+                            excellent contrast
+                        </li>
+                    </ul>
+
+                    <h3>Dynamic Theme Switching</h3>
+                    <p>
+                        You can change the theme dynamically via JavaScript:
+                    </p>
+                    <pre><code>const viewer = document.querySelector('kicanvas-embed');
+viewer.setAttribute('theme', 'witchhazel');</code></pre>
+
+                    <h3>System Theme Detection</h3>
+                    <p>
+                        Use <code>window.matchMedia</code> to detect and respond to
+                        system theme changes:
+                    </p>
+                    <pre><code>const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+darkModeQuery.addEventListener('change', (e) => {
+    viewer.theme = e.matches ? 'witchhazel' : 'kicad';
+});</code></pre>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                KiCanvas - A web-based viewer for KiCad files |
+                <a href="https://github.com/theacodes/kicanvas" target="_blank">
+                    GitHub
+                </a>
+            </p>
+        </footer>
+
+        <script type="module" src="./kicanvas/kicanvas.js"></script>
+        <script type="module" src="./theme-demo.js"></script>
+    </body>
+</html>
