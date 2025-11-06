@@ -76,6 +76,81 @@ This example shows that if you give the `<kicanvas-embed>` element an `id`, you 
 <a href="#my-schematic:Q101">Link to Q101</a>
 ```
 
+### Theme customization
+
+The `theme` attribute allows you to control the color scheme of the embedded viewer to match your page's design. This is especially useful for supporting light and dark modes.
+
+#### Basic theme usage
+
+```html
+<!-- Light theme (KiCad default) -->
+<kicanvas-embed src="my-schematic.kicad_sch" theme="kicad"></kicanvas-embed>
+
+<!-- Dark theme (Witch Hazel) -->
+<kicanvas-embed src="my-schematic.kicad_sch" theme="witchhazel"></kicanvas-embed>
+```
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+    <div>
+        <p><strong>KiCad Theme (Light)</strong></p>
+        <kicanvas-embed src="/examples/simple.kicad_sch" theme="kicad" controls="basic"></kicanvas-embed>
+    </div>
+    <div>
+        <p><strong>Witch Hazel Theme (Dark)</strong></p>
+        <kicanvas-embed src="/examples/simple.kicad_sch" theme="witchhazel" controls="basic"></kicanvas-embed>
+    </div>
+</div>
+
+#### Dynamic theme switching
+
+You can change the theme programmatically to match your page's theme:
+
+```html
+<kicanvas-embed id="my-viewer" src="my-schematic.kicad_sch"></kicanvas-embed>
+
+<script>
+    const viewer = document.getElementById('my-viewer');
+
+    // Wait for the viewer to load before changing theme
+    viewer.addEventListener('kicanvas:load', () => {
+        viewer.theme = 'witchhazel';
+    });
+</script>
+```
+
+#### Matching system dark mode
+
+This example shows how to automatically switch themes based on the user's system preference:
+
+```html
+<kicanvas-embed id="adaptive-viewer" src="my-schematic.kicad_sch"></kicanvas-embed>
+
+<script>
+    const viewer = document.getElementById('adaptive-viewer');
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function updateTheme() {
+        // Wait for viewer to be ready
+        if (!viewer.loaded) {
+            viewer.addEventListener('kicanvas:load', updateTheme, { once: true });
+            return;
+        }
+
+        viewer.theme = darkModeQuery.matches ? 'witchhazel' : 'kicad';
+    }
+
+    // Set initial theme
+    updateTheme();
+
+    // Listen for system theme changes
+    darkModeQuery.addEventListener('change', updateTheme);
+</script>
+```
+
+#### Integration with page theme
+
+For a complete example of theme integration with page-level theme controls, see the [theme demo page](/debug/theme-demo.html).
+
 ### Multiple files
 
 This example shows how to use `<kicanvas-source>` to load multiple files.
@@ -146,15 +221,66 @@ This example shows how to use `<kicanvas-source>` along with inline KiCAD data. 
 
 ## Events
 
-!!! warning "Not yet implemented"
+The `<kicanvas-embed>` element dispatches custom events that you can listen to for interactive behaviors.
 
-    This functionality hasn't been implemented yet
+| Event Name                   | Fired When                                                                                        | Status |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- | ------ |
+| ⚠️ `kicanvas:click`          | The user clicks or taps within the embedded document                                              | Not implemented |
+| ⚠️ `kicanvas:documentchange` | The currently displayed document is changed, either through user interaction or programmatically. | Not implemented |
+| ⚠️ `kicanvas:error`          | An error occurs while loading source files                                                        | Not implemented |
+| `kicanvas:load`              | All sources files have been successfully loaded                                                   | **Implemented** |
+| ⚠️ `kicanvas:loadstart`      | KiCanvas begins loading source files                                                              | Not implemented |
+| `kicanvas:select`            | The user selects (or deselects) an object within the document                                     | **Implemented** |
 
-| Event Name                   | Fired When                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| ⚠️ `kicanvas:click`          | The user clicks or taps within the embedded document                                              |
-| ⚠️ `kicanvas:documentchange` | The currently displayed document is changed, either through user interaction or programmatically. |
-| ⚠️ `kicanvas:error`          | An error occurs while loading source files                                                        |
-| ⚠️ `kicanvas:load`           | All sources files have been successfully loaded                                                   |
-| ⚠️ `kicanvas:loadstart`      | KiCanvas begins loading source files                                                              |
-| ⚠️ `kicanvas:select`         | The user selects (or deselects) an object within the document                                     |
+### Using events
+
+```html
+<kicanvas-embed id="my-viewer" src="my-schematic.kicad_sch"></kicanvas-embed>
+
+<script>
+    const viewer = document.getElementById('my-viewer');
+
+    // Listen for load event
+    viewer.addEventListener('kicanvas:load', (event) => {
+        console.log('Viewer loaded and ready');
+        // Safe to manipulate viewer properties now
+        viewer.theme = 'witchhazel';
+    });
+
+    // Listen for selection events
+    viewer.addEventListener('kicanvas:select', (event) => {
+        if (event.detail.item) {
+            console.log('Selected item:', event.detail.item);
+        } else {
+            console.log('Selection cleared');
+        }
+    });
+</script>
+```
+
+### Event details
+
+#### kicanvas:load
+
+Fired when the viewer has finished loading all files and is ready for interaction. The `loaded` property on the element will be `true` after this event fires.
+
+```javascript
+viewer.addEventListener('kicanvas:load', () => {
+    console.log('Viewer is ready');
+});
+```
+
+#### kicanvas:select
+
+Fired when the user selects or deselects items in the viewer. The event detail contains:
+
+-   `detail.item` - The selected item object, or `null` if selection was cleared
+-   `detail.previous` - The previously selected item, if any
+
+```javascript
+viewer.addEventListener('kicanvas:select', (event) => {
+    if (event.detail.item) {
+        console.log('Selected:', event.detail.item);
+    }
+});
+```
