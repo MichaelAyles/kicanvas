@@ -71,6 +71,9 @@ class KiCanvasEmbedElement extends KCUIElement {
     @attribute({ type: Boolean })
     public loaded: boolean;
 
+    @attribute({ type: Boolean })
+    public rendered: boolean;
+
     @attribute({ type: String })
     controls: "none" | "basic" | "full" | null;
 

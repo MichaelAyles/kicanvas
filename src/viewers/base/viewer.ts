@@ -13,6 +13,7 @@ import { Color, Polygon, Polyline, Renderer } from "../../graphics";
 import {
     KiCanvasLoadEvent,
     KiCanvasMouseMoveEvent,
+    KiCanvasRenderEvent,
     KiCanvasSelectEvent,
     type KiCanvasEventMap,
 } from "./events";
@@ -25,6 +26,7 @@ export abstract class Viewer extends EventTarget {
     public layers: ViewLayerSet;
     public mouse_position: Vec2 = new Vec2(0, 0);
     public loaded = new Barrier();
+    public rendered = new Barrier();
 
     protected disposables = new Disposables();
     protected setup_finished = new Barrier();
@@ -367,6 +369,13 @@ export abstract class Viewer extends EventTarget {
         if (value) {
             this.loaded.open();
             this.dispatchEvent(new KiCanvasLoadEvent());
+        }
+    }
+
+    protected resolve_rendered(value: boolean) {
+        if (value) {
+            this.rendered.open();
+            this.dispatchEvent(new KiCanvasRenderEvent());
         }
     }
 

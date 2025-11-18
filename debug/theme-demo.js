@@ -135,12 +135,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /**
-     * Wait for viewer to be loaded
+     * Wait for viewer to be loaded and rendered
      */
     async function waitForViewersToLoad() {
         if (!dynamicViewer) return;
 
-        console.log("Waiting for viewer to load...");
+        console.log("Waiting for viewer to load and render...");
 
         if (!dynamicViewer.loaded) {
             console.log("Waiting for load event...");
@@ -156,10 +156,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        console.log("Viewer loaded and ready for theme changes");
+        console.log("Viewer loaded, waiting for render...");
 
-        // Add a small delay to ensure internal state is ready
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (!dynamicViewer.rendered) {
+            console.log("Waiting for render event...");
+            await new Promise((resolve) => {
+                dynamicViewer.addEventListener(
+                    "kicanvas:render",
+                    () => {
+                        console.log("Render event received");
+                        resolve();
+                    },
+                    { once: true },
+                );
+            });
+        }
+
+        console.log("Viewer loaded and rendered, ready for theme changes");
     }
 
     /**
@@ -182,6 +195,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize on load
     initializeThemes();
+
+    /**
+     * Update status indicator
+     */
+    function updateStatusIndicator() {
+        const statusElement = document.getElementById("viewer-status");
+        if (!statusElement || !dynamicViewer) return;
+
+        console.log("Status check:", {
+            loaded: dynamicViewer.loaded,
+            rendered: dynamicViewer.rendered,
+        });
+
+        if (dynamicViewer.rendered) {
+            statusElement.textContent = "Rendered";
+            statusElement.className = "status-rendered";
+        } else if (dynamicViewer.loaded) {
+            statusElement.textContent = "Loaded";
+            statusElement.className = "status-loaded";
+        } else {
+            statusElement.textContent = "Loading...";
+            statusElement.className = "status-loading";
+        }
+    }
+
+    // Poll status indicator every 100ms to catch updates
+    setInterval(updateStatusIndicator, 100);
+
+    /**
+     * Log viewer lifecycle events for debugging
+     */
+    document.addEventListener("kicanvas:load", (e) => {
+        console.log("✓ Viewer loaded");
+        updateStatusIndicator();
+    });
+
+    document.addEventListener("kicanvas:render", (e) => {
+        console.log("✓ Viewer rendered and ready");
+        updateStatusIndicator();
+    });
 
     /**
      * Log box selection events for debugging
@@ -229,5 +282,9 @@ window.KiCanvasThemeDemo = {
     getCurrentThemes: () => ({
         page: document.getElementById("page-theme-selector")?.value,
         kicanvas: document.getElementById("kicanvas-theme-selector")?.value,
+    }),
+    getViewerStatus: () => ({
+        loaded: dynamicViewer?.loaded || false,
+        rendered: dynamicViewer?.rendered || false,
     }),
 };

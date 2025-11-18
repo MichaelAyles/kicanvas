@@ -332,3 +332,75 @@ kicanvas-embed[loading] {
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
 }
+
+/* Status Indicator */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.status-indicator span:first-child {
+    color: var(--text-secondary);
+}
+
+#viewer-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#viewer-status::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-loading {
+    background-color: rgba(255, 165, 0, 0.1);
+    color: #ff8c00;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.status-loading::before {
+    background-color: #ff8c00;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-loaded {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: #0078d4;
+    border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.status-loaded::before {
+    background-color: #0078d4;
+}
+
+.status-rendered {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.status-rendered::before {
+    background-color: #28a745;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}

@@ -5,3 +5,4 @@ www/kicanvas
 coverage/
 esbuild-meta.json
 .claude/
+CLAUDE.md
