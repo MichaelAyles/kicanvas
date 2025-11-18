@@ -6,7 +6,10 @@
 
 import { attribute, html } from "../../../base/web-components";
 import { KCUIElement } from "../../../kc-ui";
-import { KiCanvasLoadEvent } from "../../../viewers/base/events";
+import {
+    KiCanvasLoadEvent,
+    KiCanvasRenderEvent,
+} from "../../../viewers/base/events";
 import type { Viewer } from "../../../viewers/base/viewer";
 import { Preferences, WithPreferences } from "../../preferences";
 import type { ProjectPage } from "../../project";
@@ -24,6 +27,9 @@ export abstract class KCViewerElement<
 
     @attribute({ type: Boolean })
     loaded: boolean;
+
+    @attribute({ type: Boolean })
+    rendered: boolean;
 
     @attribute({
         type: String,
@@ -55,6 +61,13 @@ export abstract class KCViewerElement<
                 this.viewer.addEventListener(KiCanvasLoadEvent.type, () => {
                     this.loaded = true;
                     this.dispatchEvent(new KiCanvasLoadEvent());
+                }),
+            );
+
+            this.addDisposable(
+                this.viewer.addEventListener(KiCanvasRenderEvent.type, () => {
+                    this.rendered = true;
+                    this.dispatchEvent(new KiCanvasRenderEvent());
                 }),
             );
         })();
@@ -90,6 +103,7 @@ export abstract class KCViewerElement<
 
     async load(src: ProjectPage) {
         this.loaded = false;
+        this.rendered = false;
         await this.viewer.load(src.document);
     }
 

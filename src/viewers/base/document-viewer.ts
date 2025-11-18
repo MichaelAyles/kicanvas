@@ -82,8 +82,9 @@ export abstract class DocumentViewer<
                 this.selected = null;
             }
 
-            // Draw
+            // Draw and mark as rendered after the first frame
             this.draw();
+            this.resolve_rendered(true);
         });
     }
 

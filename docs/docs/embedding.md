@@ -235,6 +235,9 @@ This example shows how to use `<kicanvas-source>` along with inline KiCad data. 
     - `noinfo` - don't show the document info panel. ⚠️
     - `nopreferences` - don't show the user preferences panel. ⚠️
     - `nohelp` - don't show the help panel. ⚠️
+- `loaded` (read-only) - boolean attribute that indicates whether the document data has been loaded. Check this before accessing viewer properties.
+- `loading` (read-only) - boolean attribute that indicates whether the document is currently loading.
+- `rendered` (read-only) - boolean attribute that indicates whether the document has been rendered to the canvas. This fires after the first frame is drawn.
 - `src` - the URL of the document to embed. If you want to show multiple documents within a single viewer, you can use multiple child `<kicanvas-source>` elements.
 - `type` - when providing the file source inline, this explicitly sets the file type. If not specified, KiCanvas will attempt to determine the type automatically. If specified, it should be one of `schematic`, `board`, `project`, or `worksheet`.
 - `name` - when providing the file source inline, this explicitly sets the file name. This is typically only necessary when there are multiple files within a project, as KiCad uses the file name to link schematic sheets, drawing sheets, and PCBs together. If unspecified, KiCanvas will generate a file name like `inline_0.kicad_sch`.
@@ -256,6 +259,7 @@ The `<kicanvas-embed>` element dispatches custom events that you can listen to f
 | ⚠️ `kicanvas:error`          | An error occurs while loading source files                                                        | Not implemented |
 | `kicanvas:load`              | All sources files have been successfully loaded                                                   | **Implemented** |
 | ⚠️ `kicanvas:loadstart`      | KiCanvas begins loading source files                                                              | Not implemented |
+| `kicanvas:render`            | The first frame has been rendered to the canvas                                                   | **Implemented** |
 | `kicanvas:select`            | The user selects (or deselects) an object within the document                                     | **Implemented** |
 
 ### Using events
@@ -292,9 +296,60 @@ Fired when the viewer has finished loading all files and is ready for interactio
 
 ```javascript
 viewer.addEventListener("kicanvas:load", () => {
-    console.log("Viewer is ready");
+    console.log("Viewer loaded");
+    console.log("Loaded status:", viewer.loaded); // true
 });
 ```
+
+!!! note
+The `kicanvas:load` event fires when data is loaded, but before the first frame is rendered. For most use cases, you should wait for `kicanvas:render` instead.
+
+#### kicanvas:render
+
+Fired when the first frame has been rendered to the canvas. This is the most reliable indicator that the viewer is fully ready for interaction and visual presentation. The `rendered` property on the element will be `true` after this event fires.
+
+```javascript
+viewer.addEventListener("kicanvas:render", () => {
+    console.log("Viewer rendered and ready");
+    console.log("Rendered status:", viewer.rendered); // true
+
+    // Safe to apply theme changes, take screenshots, etc.
+    viewer.theme = "witchhazel";
+});
+```
+
+##### Checking render status
+
+You can check the `rendered` attribute to determine if the viewer is ready:
+
+```javascript
+const viewer = document.getElementById("my-viewer");
+
+// Option 1: Poll the attribute
+if (viewer.rendered) {
+    console.log("Already rendered");
+} else {
+    viewer.addEventListener("kicanvas:render", () => {
+        console.log("Now rendered");
+    });
+}
+
+// Option 2: Wait for render event
+async function waitForRender() {
+    if (viewer.rendered) return;
+
+    await new Promise((resolve) => {
+        viewer.addEventListener("kicanvas:render", resolve, { once: true });
+    });
+}
+```
+
+##### Lifecycle order
+
+Events fire in this order:
+
+1. `kicanvas:load` - Data loaded, `loaded` = true
+2. `kicanvas:render` - First frame rendered, `rendered` = true
 
 #### kicanvas:select
 

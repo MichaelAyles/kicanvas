@@ -8,3 +8,4 @@ esbuild-meta.json
 .pyenv
 .DS_Store
 .claude/
+CLAUDE.md

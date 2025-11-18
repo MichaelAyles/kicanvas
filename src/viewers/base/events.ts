@@ -44,22 +44,33 @@ export class KiCanvasMouseMoveEvent extends KiCanvasEvent<MouseMoveDetails> {
     }
 }
 
+export class KiCanvasRenderEvent extends KiCanvasEvent<null> {
+    static readonly type = "kicanvas:render";
+
+    constructor() {
+        super(KiCanvasRenderEvent.type, null);
+    }
+}
+
 // Event maps for type safe addEventListener.
 
 export interface KiCanvasEventMap {
     [KiCanvasLoadEvent.type]: KiCanvasLoadEvent;
     [KiCanvasSelectEvent.type]: KiCanvasSelectEvent;
     [KiCanvasMouseMoveEvent.type]: KiCanvasMouseMoveEvent;
+    [KiCanvasRenderEvent.type]: KiCanvasRenderEvent;
 }
 
 declare global {
     interface WindowEventMap {
         [KiCanvasLoadEvent.type]: KiCanvasLoadEvent;
         [KiCanvasSelectEvent.type]: KiCanvasSelectEvent;
+        [KiCanvasRenderEvent.type]: KiCanvasRenderEvent;
     }
 
     interface HTMLElementEventMap {
         [KiCanvasLoadEvent.type]: KiCanvasLoadEvent;
         [KiCanvasSelectEvent.type]: KiCanvasSelectEvent;
+        [KiCanvasRenderEvent.type]: KiCanvasRenderEvent;
     }
 }
