@@ -337,6 +337,266 @@ class TextPainter extends SchematicItemPainter {
     }
 }
 
+class TextBoxPainter extends SchematicItemPainter {
+    classes = [schematic_items.TextBox];
+
+    layers_for(item: schematic_items.TextBox) {
+        return [LayerNames.notes];
+    }
+
+    paint(layer: ViewLayer, tb: schematic_items.TextBox) {
+        // Draw box
+        const pos = tb.at.position;
+        const size = tb.size;
+        const pts = [
+            pos,
+            new Vec2(pos.x + size.x, pos.y),
+            new Vec2(pos.x + size.x, pos.y + size.y),
+            new Vec2(pos.x, pos.y + size.y),
+            pos,
+        ];
+
+        this.#fill(layer, tb, pts);
+        this.#stroke(layer, tb, pts);
+        this.#text(layer, tb);
+    }
+
+    #stroke(layer: ViewLayer, tb: schematic_items.TextBox, pts: Vec2[]) {
+        const width = tb.stroke?.width || this.gfx.state.stroke_width;
+
+        if (width < 0) {
+            return;
+        }
+
+        const stroke_type = tb.stroke?.type ?? "none";
+        if (stroke_type == "none") {
+            return;
+        }
+
+        const default_stroke = this.theme.note;
+        const color = this.dim_if_needed(tb.stroke?.color ?? default_stroke);
+
+        this.gfx.line(new Polyline(pts, width, color));
+    }
+
+    #fill(layer: ViewLayer, tb: schematic_items.TextBox, pts: Vec2[]) {
+        const fill_type = tb.fill?.type ?? "none";
+
+        if (fill_type == "none") {
+            return;
+        }
+
+        let color: Color | undefined;
+
+        switch (fill_type) {
+            case "background":
+                color = this.theme.component_body;
+                break;
+            case "outline":
+                color = this.theme.component_outline;
+                break;
+            case "color":
+                color = tb.fill!.color;
+                break;
+        }
+
+        if (color) {
+            this.gfx.polygon(new Polygon(pts, this.dim_if_needed(color)));
+        }
+    }
+
+    #text(layer: ViewLayer, tb: schematic_items.TextBox) {
+        if (tb.effects.hide || !tb.text) {
+            return;
+        }
+
+        const schtext = new SchText(tb.shown_text);
+
+        // Apply margins - margins are [left, top, right, bottom]
+        const margins = tb.margins || [0, 0, 0, 0];
+        const marginLeft = margins[0] || 0;
+        const marginTop = margins[1] || 0;
+
+        // Position text at top-left of box plus margins
+        const textPos = new Vec2(
+            tb.at.position.x + marginLeft,
+            tb.at.position.y + marginTop,
+        );
+
+        schtext.text_pos = textPos;
+        schtext.apply_effects(tb.effects);
+
+        const font_color = tb.effects.font.color;
+        if (font_color.is_transparent_black) {
+            const text_color = this.theme.note;
+            schtext.attributes.color = this.dim_if_needed(text_color);
+        } else {
+            schtext.attributes.color = this.dim_if_needed(font_color);
+        }
+
+        this.gfx.state.push();
+        StrokeFont.default().draw(
+            this.gfx,
+            schtext.shown_text,
+            schtext.text_pos,
+            schtext.attributes,
+        );
+        this.gfx.state.pop();
+    }
+}
+
+class TablePainter extends SchematicItemPainter {
+    classes = [schematic_items.Table];
+
+    layers_for(item: schematic_items.Table) {
+        return [LayerNames.notes];
+    }
+
+    paint(layer: ViewLayer, table: schematic_items.Table) {
+        // Paint cells
+        for (const cell of table.cells) {
+            this.#paintCell(layer, table, cell);
+        }
+
+        // Paint borders
+        this.#paintBorders(layer, table);
+    }
+
+    #paintCell(
+        layer: ViewLayer,
+        table: schematic_items.Table,
+        cell: schematic_items.TableCell,
+    ) {
+        const pos = cell.at.position;
+        const size = cell.size;
+        const pts = [
+            pos,
+            new Vec2(pos.x + size.x, pos.y),
+            new Vec2(pos.x + size.x, pos.y + size.y),
+            new Vec2(pos.x, pos.y + size.y),
+            pos,
+        ];
+
+        // Fill cell if specified
+        if (cell.fill?.type && cell.fill.type !== "none") {
+            let fillColor: Color | undefined;
+            if (cell.fill.type === "color" && cell.fill.color) {
+                fillColor = cell.fill.color;
+            } else if (cell.fill.type === "background") {
+                fillColor = this.theme.sheet_background;
+            }
+            if (fillColor) {
+                this.gfx.polygon(new Polygon(pts.slice(0, -1), fillColor));
+            }
+        }
+
+        // Draw cell text
+        this.#paintCellText(cell);
+    }
+
+    #paintCellText(cell: schematic_items.TableCell) {
+        if (cell.effects.hide || !cell.text) {
+            return;
+        }
+
+        const schtext = new SchText(cell.shown_text);
+
+        // Apply margins - margins are [left, top, right, bottom]
+        const margins = cell.margins || [0, 0, 0, 0];
+        const marginLeft = margins[0] || 0;
+        const marginTop = margins[1] || 0;
+
+        // Position text at cell position plus margins
+        const textPos = new Vec2(
+            cell.at.position.x + marginLeft,
+            cell.at.position.y + marginTop,
+        );
+
+        schtext.text_pos = textPos;
+        schtext.apply_effects(cell.effects);
+
+        const font_color = cell.effects.font.color;
+        if (font_color.is_transparent_black) {
+            const text_color = this.theme.note;
+            schtext.attributes.color = this.dim_if_needed(text_color);
+        } else {
+            schtext.attributes.color = this.dim_if_needed(font_color);
+        }
+
+        this.gfx.state.push();
+        StrokeFont.default().draw(
+            this.gfx,
+            schtext.shown_text,
+            schtext.text_pos,
+            schtext.attributes,
+        );
+        this.gfx.state.pop();
+    }
+
+    #paintBorders(layer: ViewLayer, table: schematic_items.Table) {
+        const bbox = table.bbox;
+
+        // Draw external border if specified
+        if (table.border?.external && table.border.stroke) {
+            const strokeWidth =
+                table.border.stroke.width || this.gfx.state.stroke_width;
+            const strokeColor =
+                table.border.stroke.color?.is_transparent_black === false
+                    ? table.border.stroke.color
+                    : this.theme.note;
+
+            const pts = [
+                bbox.top_left,
+                bbox.top_right,
+                bbox.bottom_right,
+                bbox.bottom_left,
+                bbox.top_left,
+            ];
+            this.gfx.line(new Polyline(pts, strokeWidth, strokeColor));
+        }
+
+        // Draw separators if specified
+        if (table.separators && table.separators.stroke) {
+            const strokeWidth =
+                table.separators.stroke.width || this.gfx.state.stroke_width;
+            const strokeColor =
+                table.separators.stroke.color?.is_transparent_black === false
+                    ? table.separators.stroke.color
+                    : this.theme.note;
+
+            // Draw column separators
+            if (table.separators.cols && table.column_widths.length > 1) {
+                let x = bbox.x;
+                for (let i = 0; i < table.column_widths.length - 1; i++) {
+                    x += table.column_widths[i]!;
+                    this.gfx.line(
+                        new Polyline(
+                            [new Vec2(x, bbox.y), new Vec2(x, bbox.y + bbox.h)],
+                            strokeWidth,
+                            strokeColor,
+                        ),
+                    );
+                }
+            }
+
+            // Draw row separators
+            if (table.separators.rows && table.row_heights.length > 1) {
+                let y = bbox.y;
+                for (let i = 0; i < table.row_heights.length - 1; i++) {
+                    y += table.row_heights[i]!;
+                    this.gfx.line(
+                        new Polyline(
+                            [new Vec2(bbox.x, y), new Vec2(bbox.x + bbox.w, y)],
+                            strokeWidth,
+                            strokeColor,
+                        ),
+                    );
+                }
+            }
+        }
+    }
+}
+
 class PropertyPainter extends SchematicItemPainter {
     classes = [schematic_items.Property];
 
@@ -612,6 +872,8 @@ export class SchematicPainter extends BaseSchematicPainter {
             new JunctionPainter(this, gfx),
             new NoConnectPainter(this, gfx),
             new TextPainter(this, gfx),
+            new TextBoxPainter(this, gfx),
+            new TablePainter(this, gfx),
             new LibTextPainter(this, gfx),
             new PinPainter(this, gfx),
             new LibSymbolPainter(this, gfx),

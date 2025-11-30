@@ -114,11 +114,12 @@ export const P = {
     /**
      * Checks that the first item in the list is "name". For example,
      * (thing 1 2 3) would use start("thing").
+     * Can also accept an array of names for aliases, e.g. start(["text_box", "textbox"])
      */
-    start(name: string): PropertyDefinition {
+    start(name: string | string[]): PropertyDefinition {
         return {
             kind: Kind.start,
-            name: name,
+            name: name as string,
             fn: T.string,
         };
     },
