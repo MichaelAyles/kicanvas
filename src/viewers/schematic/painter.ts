@@ -416,11 +416,13 @@ class TextBoxPainter extends SchematicItemPainter {
         const margins = tb.margins || [0, 0, 0, 0];
         const marginLeft = margins[0] || 0;
         const marginTop = margins[1] || 0;
+        const marginRight = margins[2] || 0;
 
         // Position text at top-left of box plus margins
+        // Multiply by 10000 to convert to internal units (like apply_at does)
         const textPos = new Vec2(
-            tb.at.position.x + marginLeft,
-            tb.at.position.y + marginTop,
+            (tb.at.position.x + marginLeft) * 10000,
+            (tb.at.position.y + marginTop) * 10000,
         );
 
         schtext.text_pos = textPos;
@@ -434,13 +436,20 @@ class TextBoxPainter extends SchematicItemPainter {
             schtext.attributes.color = this.dim_if_needed(font_color);
         }
 
-        this.gfx.state.push();
-        StrokeFont.default().draw(
-            this.gfx,
+        // Wrap text to fit within the box width
+        const columnWidth = (tb.size.x - marginLeft - marginRight) * 10000;
+        const font = StrokeFont.default();
+        const wrappedText = font.break_lines(
             schtext.shown_text,
-            schtext.text_pos,
-            schtext.attributes,
+            columnWidth,
+            schtext.attributes.size,
+            schtext.attributes.stroke_width,
+            schtext.attributes.bold,
+            schtext.attributes.italic,
         );
+
+        this.gfx.state.push();
+        font.draw(this.gfx, wrappedText, schtext.text_pos, schtext.attributes);
         this.gfx.state.pop();
     }
 }
@@ -505,11 +514,13 @@ class TablePainter extends SchematicItemPainter {
         const margins = cell.margins || [0, 0, 0, 0];
         const marginLeft = margins[0] || 0;
         const marginTop = margins[1] || 0;
+        const marginRight = margins[2] || 0;
 
         // Position text at cell position plus margins
+        // Multiply by 10000 to convert to internal units (like apply_at does)
         const textPos = new Vec2(
-            cell.at.position.x + marginLeft,
-            cell.at.position.y + marginTop,
+            (cell.at.position.x + marginLeft) * 10000,
+            (cell.at.position.y + marginTop) * 10000,
         );
 
         schtext.text_pos = textPos;
@@ -523,13 +534,20 @@ class TablePainter extends SchematicItemPainter {
             schtext.attributes.color = this.dim_if_needed(font_color);
         }
 
-        this.gfx.state.push();
-        StrokeFont.default().draw(
-            this.gfx,
+        // Wrap text to fit within the cell width
+        const columnWidth = (cell.size.x - marginLeft - marginRight) * 10000;
+        const font = StrokeFont.default();
+        const wrappedText = font.break_lines(
             schtext.shown_text,
-            schtext.text_pos,
-            schtext.attributes,
+            columnWidth,
+            schtext.attributes.size,
+            schtext.attributes.stroke_width,
+            schtext.attributes.bold,
+            schtext.attributes.italic,
         );
+
+        this.gfx.state.push();
+        font.draw(this.gfx, wrappedText, schtext.text_pos, schtext.attributes);
         this.gfx.state.pop();
     }
 
