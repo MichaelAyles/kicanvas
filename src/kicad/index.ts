@@ -8,6 +8,18 @@ export { KicadPCB } from "./board";
 export { KicadSch } from "./schematic";
 export { DrawingSheet, type DrawingSheetDocument } from "./drawing-sheet";
 export { ProjectSettings } from "./project-settings";
+export {
+    detectContentType,
+    isFragment,
+    isFullDocument,
+    isKicadSExpression,
+    type ContentType,
+} from "./content-detector";
+export {
+    wrapSchematicFragment,
+    wrapPCBFragment,
+    wrapFragment,
+} from "./fragment";
 export type {
     Theme,
     BaseTheme,
