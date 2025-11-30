@@ -21,6 +21,7 @@ import {
     LocalFileSystem,
     MergedFileSystem,
     type IFileSystem,
+    TextContentFileSystem,
 } from "../services/vfs";
 import type { KCBoardAppElement } from "./kc-board/app";
 import type { KCSchematicAppElement } from "./kc-schematic/app";
@@ -74,6 +75,9 @@ class KiCanvasEmbedElement extends KCUIElement {
     @attribute({ type: String })
     src: string | null;
 
+    @attribute({ type: String })
+    content: string | null;
+
     @attribute({ type: Boolean })
     public loading: boolean;
 
@@ -125,6 +129,12 @@ class KiCanvasEmbedElement extends KCUIElement {
     async #setup_events() {}
 
     async #load_src() {
+        // Raw content (e.g. a clipboard snippet) takes precedence over src
+        if (this.content) {
+            await this.loadContent(this.content);
+            return;
+        }
+
         const url_src = [];
         const inline_file = [];
 
@@ -177,9 +187,32 @@ class KiCanvasEmbedElement extends KCUIElement {
         await this.#setup_project(vfs);
     }
 
+    /**
+     * Load KiCAD content from a raw string.
+     *
+     * This method accepts any valid KiCAD S-expression content, including:
+     * - Full documents (kicad_sch, kicad_pcb)
+     * - Document fragments (individual elements like text, wire, symbol, etc.)
+     * - Clipboard data
+     *
+     * Content type is automatically detected and fragments are wrapped in
+     * minimal valid document structures.
+     *
+     * @param content - Raw KiCAD S-expression content
+     * @param filename - Optional filename for the content (used for display)
+     */
+    async loadContent(content: string, filename: string = "content") {
+        const vfs = new TextContentFileSystem(content, filename);
+        await this.#setup_project(vfs);
+    }
+
     async #setup_project(vfs: IFileSystem) {
         this.loaded = false;
         this.loading = true;
+
+        // Reset app elements for fresh load
+        this.schematic_app = null!;
+        this.board_app = null!;
 
         try {
             await vfs.setup();
@@ -188,7 +221,12 @@ class KiCanvasEmbedElement extends KCUIElement {
             this.loaded = true;
             await this.update();
 
-            this.#project.set_active_page(this.#project.root_schematic_page!);
+            // Set active page - prefer schematic, fall back to first available
+            const activePage =
+                this.#project.root_schematic_page ?? this.#project.first_page;
+            if (activePage) {
+                this.#project.set_active_page(activePage);
+            }
         } finally {
             this.loading = false;
         }

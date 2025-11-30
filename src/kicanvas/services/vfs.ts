@@ -312,6 +312,23 @@ export class FetchFileSystem extends FileSystemBase {
 /**
  * Virtual file system for HTML drag and drop (DataTransfer)
  */
+/**
+ * Virtual file system for raw text content.
+ *
+ * Used for loading content from strings, clipboard data, inline content, etc.
+ * Unlike <kicanvas-source> inline sources, the file name doesn't need a KiCad
+ * extension: the project detects the content type from the text itself.
+ */
+export class TextContentFileSystem extends LocalFileSystemBase {
+    constructor(content: string, filename: string = "content") {
+        super(
+            new Map([
+                [filename, new File([content], filename, { type: "text/plain" })],
+            ]),
+        );
+    }
+}
+
 export class DragAndDropFileSystem extends LocalFileSystemBase {
     static async fromDataTransfer(dt: DataTransfer) {
         const items: FileSystemEntry[] = [];
