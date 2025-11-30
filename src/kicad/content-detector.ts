@@ -171,7 +171,11 @@ function getFirstElements(content: string, count: number): string[] {
             foundFirstAtom = false;
         } else if (token.type === Token.CLOSE) {
             depth--;
-        } else if (token.type === Token.ATOM && depth === 1 && !foundFirstAtom) {
+        } else if (
+            token.type === Token.ATOM &&
+            depth === 1 &&
+            !foundFirstAtom
+        ) {
             // First atom after opening paren at depth 1 is the element type
             elements.push(token.value);
             foundFirstAtom = true;
