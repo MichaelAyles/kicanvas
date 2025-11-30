@@ -10,7 +10,13 @@ import { type IDisposable } from "../base/disposable";
 import { first, length, map } from "../base/iterator";
 import { Logger } from "../base/log";
 import { is_string, type Constructor } from "../base/types";
-import { KicadPCB, KicadSch, ProjectSettings } from "../kicad";
+import {
+    KicadPCB,
+    KicadSch,
+    ProjectSettings,
+    detectContentType,
+    wrapFragment,
+} from "../kicad";
 import type {
     SchematicSheet,
     SchematicSheetInstance,
@@ -82,6 +88,7 @@ export class Project extends EventTarget implements IDisposable {
     async #load_file(filename: string) {
         log.info(`Loading file ${filename}`);
 
+        // Fast path: extension-based detection
         if (filename.endsWith(".kicad_sch")) {
             return await this.#load_doc(KicadSch, filename);
         }
@@ -92,7 +99,51 @@ export class Project extends EventTarget implements IDisposable {
             return this.#load_meta(filename);
         }
 
-        log.warn(`Couldn't load ${filename}: unknown file type`);
+        // Slow path: content-based detection for unknown extensions
+        return await this.#load_file_by_content(filename);
+    }
+
+    async #load_file_by_content(filename: string) {
+        log.info(`Detecting content type for ${filename}`);
+
+        const text = await this.#get_file_text(filename);
+        const contentType = detectContentType(text);
+
+        log.info(`Detected content type: ${contentType}`);
+
+        switch (contentType) {
+            case "kicad_sch":
+                return await this.#load_doc_from_text(KicadSch, filename, text);
+
+            case "kicad_pcb":
+                return await this.#load_doc_from_text(KicadPCB, filename, text);
+
+            case "kicad_pro":
+                return this.#load_meta_from_text(text);
+
+            case "sch_fragment": {
+                const wrapped = wrapFragment(text, "sch_fragment");
+                return await this.#load_doc_from_text(
+                    KicadSch,
+                    filename,
+                    wrapped,
+                );
+            }
+
+            case "pcb_fragment": {
+                const wrapped = wrapFragment(text, "pcb_fragment");
+                return await this.#load_doc_from_text(
+                    KicadPCB,
+                    filename,
+                    wrapped,
+                );
+            }
+
+            default:
+                log.warn(
+                    `Couldn't load ${filename}: unknown or unsupported content type "${contentType}"`,
+                );
+        }
     }
 
     async #load_doc(
@@ -128,8 +179,41 @@ export class Project extends EventTarget implements IDisposable {
 
     async #load_meta(filename: string) {
         const text = await this.#get_file_text(filename);
+        this.#load_meta_from_text(text);
+    }
+
+    #load_meta_from_text(text: string) {
         const data = JSON.parse(text);
         this.settings = ProjectSettings.load(data);
+    }
+
+    async #load_doc_from_text(
+        document_class: Constructor<KicadPCB | KicadSch>,
+        filename: string,
+        text: string,
+    ) {
+        if (this.#files_by_name.has(filename)) {
+            return this.#files_by_name.get(filename);
+        }
+
+        const doc = new document_class(filename, text);
+        doc.project = this;
+
+        this.#files_by_name.set(filename, doc);
+
+        if (doc instanceof KicadPCB) {
+            const page = new ProjectPage(
+                this,
+                "pcb",
+                doc.filename,
+                "",
+                "Board",
+                "",
+            );
+            this.#pages_by_path.set(page.project_path, page);
+        }
+
+        return doc;
     }
 
     async #get_file_text(filename: string) {

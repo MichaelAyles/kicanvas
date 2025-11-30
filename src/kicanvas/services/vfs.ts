@@ -118,6 +118,47 @@ export class FetchFileSystem extends VirtualFileSystem {
 /**
  * Virtual file system for HTML drag and drop (DataTransfer)
  */
+/**
+ * Virtual file system for raw text content.
+ *
+ * Used for loading content from strings, clipboard data, inline content, etc.
+ */
+export class TextContentFileSystem extends VirtualFileSystem {
+    private files: Map<string, string> = new Map();
+
+    constructor(content: string, filename: string = "content") {
+        super();
+        this.files.set(filename, content);
+    }
+
+    /**
+     * Add additional content with a given filename
+     */
+    addContent(content: string, filename: string) {
+        this.files.set(filename, content);
+    }
+
+    public override *list() {
+        yield* this.files.keys();
+    }
+
+    public override async has(name: string): Promise<boolean> {
+        return this.files.has(name);
+    }
+
+    public override async get(name: string): Promise<File> {
+        const content = this.files.get(name);
+        if (!content) {
+            throw new Error(`File ${name} not found!`);
+        }
+        return new File([content], name, { type: "text/plain" });
+    }
+
+    public async download(name: string) {
+        initiate_download(await this.get(name));
+    }
+}
+
 export class DragAndDropFileSystem extends VirtualFileSystem {
     constructor(private items: FileSystemFileEntry[]) {
         super();

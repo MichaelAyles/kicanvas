@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Universal Input Test - KiCanvas</title>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: #1a1a2e;
+                color: #eee;
+            }
+            h1 {
+                margin-bottom: 10px;
+            }
+            .test-section {
+                margin-bottom: 30px;
+                border: 1px solid #333;
+                padding: 15px;
+                border-radius: 8px;
+            }
+            .test-section h2 {
+                margin-top: 0;
+                color: #88f;
+            }
+            kicanvas-embed {
+                width: 100%;
+                height: 400px;
+                border: 1px solid #444;
+                border-radius: 4px;
+            }
+            .status {
+                margin-top: 10px;
+                padding: 10px;
+                background: #2a2a3e;
+                border-radius: 4px;
+                font-family: monospace;
+                font-size: 12px;
+            }
+            button {
+                background: #4a4a6e;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-right: 10px;
+            }
+            button:hover {
+                background: #5a5a8e;
+            }
+            textarea {
+                width: 100%;
+                height: 150px;
+                background: #2a2a3e;
+                color: #eee;
+                border: 1px solid #444;
+                border-radius: 4px;
+                padding: 10px;
+                font-family: monospace;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Universal Input Test</h1>
+        <p>Testing KiCanvas with various input methods.</p>
+
+        <div class="test-section">
+            <h2>Test 1: Load .txt file with schematic fragment</h2>
+            <p>
+                Loading <code>examples/textbox_snip.txt</code> via src
+                attribute:
+            </p>
+            <kicanvas-embed
+                id="test1"
+                src="examples/textbox_snip.txt"
+                controls="full"></kicanvas-embed>
+            <div class="status" id="status1">Status: Loading...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 2: Load via inline content attribute</h2>
+            <kicanvas-embed
+                id="test2"
+                content='(text "Hello from inline content!" (exclude_from_sim no) (at 100 100 0) (effects (font (size 2.54 2.54))) (uuid "test-uuid-1234"))'
+                controls="full">
+            </kicanvas-embed>
+            <div class="status" id="status2">Status: Loading...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 3: Load via JavaScript loadContent()</h2>
+            <textarea id="content-input">
+(wire (pts (xy 50 50) (xy 100 50))
+    (stroke (width 0) (type default))
+    (uuid "wire-test-1"))
+(wire (pts (xy 100 50) (xy 100 100))
+    (stroke (width 0) (type default))
+    (uuid "wire-test-2"))
+(junction (at 100 50) (diameter 0) (color 0 0 0 0)
+    (uuid "junction-test-1"))
+(text "Loaded via JS!" (exclude_from_sim no) (at 75 30 0)
+    (effects (font (size 1.5 1.5)))
+    (uuid "text-test-1"))</textarea
+            >
+            <br /><br />
+            <button onclick="loadCustomContent()">Load Content</button>
+            <kicanvas-embed id="test3" controls="full"></kicanvas-embed>
+            <div class="status" id="status3">
+                Status: Waiting for content...
+            </div>
+        </div>
+
+        <script src="kicanvas/kicanvas.js"></script>
+        <script>
+            // Monitor loading status
+            function setupStatusMonitor(id) {
+                const embed = document.getElementById(id);
+                const status = document.getElementById("status" + id.slice(-1));
+
+                if (embed) {
+                    const updateStatus = () => {
+                        const states = [];
+                        if (embed.loading) states.push("loading");
+                        if (embed.loaded) states.push("loaded");
+                        if (embed.rendered) states.push("rendered");
+                        status.textContent =
+                            "Status: " +
+                            (states.length ? states.join(", ") : "idle");
+                    };
+
+                    // Check periodically
+                    const interval = setInterval(() => {
+                        updateStatus();
+                        if (embed.loaded) {
+                            clearInterval(interval);
+                        }
+                    }, 100);
+
+                    // Also check after a timeout in case loading fails
+                    setTimeout(() => {
+                        clearInterval(interval);
+                        updateStatus();
+                        if (!embed.loaded && !embed.loading) {
+                            status.textContent +=
+                                " (may have failed - check console)";
+                        }
+                    }, 5000);
+                }
+            }
+
+            setupStatusMonitor("test1");
+            setupStatusMonitor("test2");
+
+            async function loadCustomContent() {
+                const embed = document.getElementById("test3");
+                const status = document.getElementById("status3");
+                const content = document.getElementById("content-input").value;
+
+                status.textContent = "Status: Loading...";
+                console.log("loadCustomContent called, embed:", embed);
+                console.log("embed.loadContent:", embed.loadContent);
+                console.log("content length:", content.length);
+
+                try {
+                    if (typeof embed.loadContent !== "function") {
+                        throw new Error(
+                            "loadContent is not a function - element may not be ready",
+                        );
+                    }
+                    await embed.loadContent(content);
+                    status.textContent = "Status: Loaded successfully!";
+                } catch (e) {
+                    status.textContent = "Status: Error - " + e.message;
+                    console.error(e);
+                }
+            }
+        </script>
+    </body>
+</html>

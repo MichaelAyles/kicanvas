@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+    <head>
+        <title>KiCanvas Theme Test</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                max-width: 1200px;
+                margin: 0 auto;
+                transition:
+                    background-color 0.3s,
+                    color 0.3s;
+            }
+            body.dark-mode {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+            }
+            body.dark-mode h1,
+            body.dark-mode h2 {
+                color: #e0e0e0;
+            }
+            body.dark-mode .description {
+                background: #2a2a2a;
+                color: #e0e0e0;
+            }
+            body.dark-mode .viewer-container {
+                border-color: #444;
+            }
+            body.dark-mode code {
+                background: #3a3a3a;
+                color: #e0e0e0;
+            }
+            body.dark-mode .theme-toggle {
+                background: #3a3a3a;
+                color: #e0e0e0;
+                border-color: #555;
+            }
+            h1 {
+                color: #333;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            h2 {
+                color: #666;
+                margin-top: 40px;
+            }
+            .description {
+                background: #f5f5f5;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .viewer-container {
+                margin-bottom: 40px;
+                border: 2px solid #ddd;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+            code {
+                background: #e0e0e0;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-family: monospace;
+            }
+            .theme-toggle {
+                padding: 10px 20px;
+                font-size: 16px;
+                background: #f0f0f0;
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .theme-toggle:hover {
+                background: #e0e0e0;
+            }
+            .theme-toggle:active {
+                transform: scale(0.95);
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>
+            <span>KiCanvas Theme Test</span>
+            <button class="theme-toggle" onclick="togglePageTheme()">
+                Toggle Page Theme
+            </button>
+        </h1>
+
+        <div class="description">
+            <p>
+                This page tests the <code>theme</code> attribute for the
+                <code>&lt;kicanvas-embed&gt;</code> element.
+            </p>
+            <p>
+                Use the "Toggle Page Theme" button to switch between light and
+                dark modes. The KiCanvas viewers will automatically update their
+                themes to match.
+            </p>
+            <p>Valid theme values are:</p>
+            <ul>
+                <li>
+                    <code>witchhazel</code> - Dark theme (dark for both
+                    schematics and boards)
+                </li>
+                <li>
+                    <code>kicad</code> - KiCAD default theme (light schematics,
+                    dark boards)
+                </li>
+            </ul>
+            <p>
+                <strong>Note:</strong> The KiCAD default theme uses a light
+                background for schematics but a dark background for boards,
+                matching KiCAD's official color scheme.
+            </p>
+        </div>
+
+        <h2>Schematic - Dynamic Theme (changes with page theme)</h2>
+        <div class="viewer-container">
+            <kicanvas-embed
+                id="schematic-dynamic"
+                src="examples/helium.kicad_sch"
+                controls="basic"
+                theme="kicad">
+            </kicanvas-embed>
+        </div>
+
+        <h2>Board - Dynamic Theme (changes with page theme)</h2>
+        <div class="viewer-container">
+            <kicanvas-embed
+                id="board-dynamic"
+                src="examples/starfish.kicad_pcb"
+                controls="basic"
+                theme="kicad">
+            </kicanvas-embed>
+        </div>
+
+        <h2>Schematic - Fixed kicad theme (light)</h2>
+        <div class="viewer-container">
+            <kicanvas-embed
+                src="examples/helium.kicad_sch"
+                controls="basic"
+                theme="kicad">
+            </kicanvas-embed>
+        </div>
+
+        <h2>Schematic - Fixed witchhazel theme (dark)</h2>
+        <div class="viewer-container">
+            <kicanvas-embed
+                src="examples/helium.kicad_sch"
+                controls="basic"
+                theme="witchhazel">
+            </kicanvas-embed>
+        </div>
+
+        <h2>Board - Fixed kicad theme (dark)</h2>
+        <div class="viewer-container">
+            <kicanvas-embed
+                src="examples/starfish.kicad_pcb"
+                controls="basic"
+                theme="kicad">
+            </kicanvas-embed>
+        </div>
+    </body>
+
+    <script type="module" src="./kicanvas/kicanvas.js"></script>
+    <script>
+        // Initialize theme state
+        let isDarkMode = false;
+
+        function togglePageTheme() {
+            isDarkMode = !isDarkMode;
+            const body = document.body;
+
+            // Toggle page dark mode class
+            body.classList.toggle("dark-mode", isDarkMode);
+
+            // Get the theme name for KiCanvas
+            const kicanvasTheme = isDarkMode ? "witchhazel" : "kicad";
+
+            // Update dynamic viewers
+            const dynamicViewers = document.querySelectorAll(
+                "#schematic-dynamic, #board-dynamic",
+            );
+            dynamicViewers.forEach((viewer) => {
+                viewer.theme = kicanvasTheme;
+            });
+        }
+    </script>
+</html>
