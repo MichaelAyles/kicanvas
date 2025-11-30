@@ -113,18 +113,10 @@ export class Project extends EventTarget implements IDisposable {
 
         switch (contentType) {
             case "kicad_sch":
-                return await this.#load_doc_from_text(
-                    KicadSch,
-                    filename,
-                    text,
-                );
+                return await this.#load_doc_from_text(KicadSch, filename, text);
 
             case "kicad_pcb":
-                return await this.#load_doc_from_text(
-                    KicadPCB,
-                    filename,
-                    text,
-                );
+                return await this.#load_doc_from_text(KicadPCB, filename, text);
 
             case "kicad_pro":
                 return this.#load_meta_from_text(text);
