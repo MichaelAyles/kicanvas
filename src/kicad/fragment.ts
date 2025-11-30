@@ -42,13 +42,17 @@ export function wrapSchematicFragment(
     // KiCAD 8 format version
     const version = 20231120;
 
+    // Check if content already contains lib_symbols - don't add empty one if so
+    const hasLibSymbols = content.trim().startsWith("(lib_symbols");
+    const libSymbolsLine = hasLibSymbols ? "" : "(lib_symbols)";
+
     return `(kicad_sch
     (version ${version})
     (generator "kicanvas")
     (generator_version "1.0")
     (uuid "${uuid}")
     (paper "${paperSize}")
-    (lib_symbols)
+    ${libSymbolsLine}
     ${content}
 )`;
 }

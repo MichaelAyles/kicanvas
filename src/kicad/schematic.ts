@@ -6,7 +6,7 @@
 
 import { Color } from "../base/color";
 import * as log from "../base/log";
-import { Arc as MathArc, Vec2 } from "../base/math";
+import { Arc as MathArc, BBox, Vec2 } from "../base/math";
 import type { Project } from "../kicanvas/project";
 import {
     At,
@@ -18,6 +18,7 @@ import {
     unescape_string,
 } from "./common";
 import { P, T, parse_expr, type Parseable } from "./parser";
+import type { List } from "./tokenizer";
 
 /* Default values for various things found in schematics
  * From EESchema's default_values.h, converted from mils to mm. */
@@ -73,7 +74,8 @@ export class KicadSch {
     hierarchical_labels: HierarchicalLabel[] = [];
     symbols = new Map<string, SchematicSymbol>();
     no_connects: NoConnect[] = [];
-    drawings: (Polyline | Text)[] = [];
+    drawings: (Polyline | Rectangle | Arc | Text | TextBox)[] = [];
+    tables: Table[] = [];
     images: Image[] = [];
     sheet_instances?: SheetInstances;
     symbol_instances?: SymbolInstances;
@@ -122,6 +124,9 @@ export class KicadSch {
                 P.collection("drawings", "rectangle", T.item(Rectangle, this)),
                 P.collection("drawings", "arc", T.item(Arc, this)),
                 P.collection("drawings", "text", T.item(Text, this)),
+                P.collection("drawings", "textbox", T.item(TextBox, this)),
+                P.collection("drawings", "text_box", T.item(TextBox, this)),
+                P.collection("tables", "table", T.item(Table)),
                 P.collection("images", "image", T.item(Image)),
                 P.item("sheet_instances", SheetInstances),
                 P.item("symbol_instances", SymbolInstances),
@@ -200,6 +205,7 @@ export class KicadSch {
         yield* this.no_connects;
         yield* this.symbols.values();
         yield* this.drawings;
+        yield* this.tables;
         yield* this.images;
         yield* this.sheets;
     }
@@ -647,27 +653,219 @@ export class LibText extends Text {
     }
 }
 
-export class TextBox extends GraphicItem {
+export class TextBox {
+    parent?: KicadSch | LibSymbol | SchematicSymbol;
     text: string;
     at: At;
     size: Vec2;
+    margins: number[] = [0, 0, 0, 0]; // left, top, right, bottom
     effects = new Effects();
+    stroke?: Stroke;
+    fill?: Fill;
+    uuid?: string;
 
-    constructor(expr: Parseable, parent?: LibSymbol | SchematicSymbol) {
-        /* TODO: This was added in KiCAD 7 */
-        super(parent);
+    constructor(
+        expr: Parseable,
+        parent?: KicadSch | LibSymbol | SchematicSymbol,
+    ) {
+        /*
+        (text_box "test normal box\n"
+            (exclude_from_sim no)
+            (at 170.18 81.28 0)
+            (size 22.86 27.94)
+            (margins 0.9525 0.9525 0.9525 0.9525)
+            (stroke (width 0) (type solid))
+            (fill (type none))
+            (effects
+                (font (size 1.27 1.27) (thickness 0.254) (bold yes))
+                (justify left top)
+            )
+            (uuid "..."))
+        */
+        this.parent = parent;
         Object.assign(
             this,
             parse_expr(
                 expr,
-                P.start("text"),
+                P.start(["text_box", "textbox"]),
                 P.positional("text"),
                 P.item("at", At),
                 P.vec2("size"),
+                P.list("margins", T.number),
                 P.item("effects", Effects),
-                ...GraphicItem.common_expr_defs,
+                P.item("stroke", Stroke),
+                P.item("fill", Fill),
+                P.pair("uuid", T.string),
             ),
         );
+
+        // Remove trailing \n on text
+        if (this.text?.endsWith("\n")) {
+            this.text = this.text.slice(0, this.text.length - 1);
+        }
+    }
+
+    get shown_text() {
+        if (this.parent && "resolve_text_var" in this.parent) {
+            return expand_text_vars(this.text, this.parent);
+        }
+        return this.text;
+    }
+}
+
+export class TableCell {
+    text: string;
+    at: At;
+    size: Vec2;
+    margins: number[] = [0, 0, 0, 0];
+    span: Vec2 = new Vec2(1, 1);
+    fill?: Fill;
+    effects = new Effects();
+    uuid?: string;
+
+    constructor(expr: Parseable) {
+        /*
+        (table_cell "table row 1"
+            (exclude_from_sim no)
+            (at 217.17 91.44 0)
+            (size 29.21 2.54)
+            (margins 0.9525 0.9525 0.9525 0.9525)
+            (span 1 1)
+            (fill (type none))
+            (effects (font (size 1.27 1.27)) (justify left top))
+            (uuid "..."))
+        */
+        Object.assign(
+            this,
+            parse_expr(
+                expr,
+                P.start("table_cell"),
+                P.positional("text"),
+                P.item("at", At),
+                P.vec2("size"),
+                P.list("margins", T.number),
+                P.vec2("span"),
+                P.item("fill", Fill),
+                P.item("effects", Effects),
+                P.pair("uuid", T.string),
+            ),
+        );
+    }
+
+    get shown_text() {
+        return this.text;
+    }
+}
+
+export class TableBorder {
+    external = false;
+    header = false;
+    stroke?: Stroke;
+
+    constructor(expr: Parseable) {
+        Object.assign(
+            this,
+            parse_expr(
+                expr,
+                P.start("border"),
+                P.atom("external"),
+                P.atom("header"),
+                P.item("stroke", Stroke),
+            ),
+        );
+    }
+}
+
+export class TableSeparators {
+    rows = false;
+    cols = false;
+    stroke?: Stroke;
+
+    constructor(expr: Parseable) {
+        Object.assign(
+            this,
+            parse_expr(
+                expr,
+                P.start("separators"),
+                P.atom("rows"),
+                P.atom("cols"),
+                P.item("stroke", Stroke),
+            ),
+        );
+    }
+}
+
+export class Table {
+    column_count: number = 1;
+    border?: TableBorder;
+    separators?: TableSeparators;
+    column_widths: number[] = [];
+    row_heights: number[] = [];
+    cells: TableCell[] = [];
+
+    constructor(expr: Parseable) {
+        /*
+        (table
+            (column_count 1)
+            (border (external yes) (header yes) (stroke ...))
+            (separators (rows yes) (cols yes) (stroke ...))
+            (column_widths 29.21)
+            (row_heights 2.54 2.54 2.54 ...)
+            (cells (table_cell ...) (table_cell ...) ...))
+        */
+        Object.assign(
+            this,
+            parse_expr(
+                expr,
+                P.start("table"),
+                P.pair("column_count", T.number),
+                P.item("border", TableBorder),
+                P.item("separators", TableSeparators),
+                P.list("column_widths", T.number),
+                P.list("row_heights", T.number),
+                P.expr("cells", (obj, name, e) => {
+                    // Parse the cells list - it contains table_cell items
+                    const cells: TableCell[] = [];
+                    const list = e as List;
+                    for (let i = 1; i < list.length; i++) {
+                        const cellExpr = list[i];
+                        if (
+                            Array.isArray(cellExpr) &&
+                            cellExpr[0] === "table_cell"
+                        ) {
+                            cells.push(new TableCell(cellExpr as Parseable));
+                        }
+                    }
+                    return cells;
+                }),
+            ),
+        );
+    }
+
+    /** Get the bounding box of the table based on cell positions */
+    get bbox(): BBox {
+        if (this.cells.length === 0) {
+            return new BBox(0, 0, 0, 0);
+        }
+
+        let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
+
+        for (const cell of this.cells) {
+            const x = cell.at.position.x;
+            const y = cell.at.position.y;
+            const w = cell.size.x;
+            const h = cell.size.y;
+
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + w);
+            maxY = Math.max(maxY, y + h);
+        }
+
+        return new BBox(minX, minY, maxX - minX, maxY - minY);
     }
 }
 
@@ -850,6 +1048,7 @@ export class LibSymbol {
                 P.collection("drawings", "rectangle", T.item(Rectangle, this)),
                 P.collection("drawings", "text", T.item(LibText, this)),
                 P.collection("drawings", "textbox", T.item(TextBox, this)),
+                P.collection("drawings", "text_box", T.item(TextBox, this)),
             ),
         );
 
