@@ -47,6 +47,7 @@ const SCHEMATIC_ELEMENTS = new Set([
     // Symbols and sheets
     "symbol",
     "sheet",
+    "lib_symbols",
     // Graphics
     "polyline",
     "rectangle",
@@ -55,6 +56,7 @@ const SCHEMATIC_ELEMENTS = new Set([
     "bezier",
     "text",
     "text_box",
+    "textbox",
     "table",
     "image",
 ]);
