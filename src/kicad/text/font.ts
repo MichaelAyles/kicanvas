@@ -148,9 +148,9 @@ export abstract class Font {
                     out_text += " " + word;
                     line_width += space_width + width;
                 } else {
-                    out_text += "\n";
-                    line_width = 0;
-                    unset_line = true;
+                    out_text += "\n" + word;
+                    line_width = width;
+                    unset_line = false;
                 }
             }
 
