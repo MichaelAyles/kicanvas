@@ -323,7 +323,10 @@ export class TextContentFileSystem extends LocalFileSystemBase {
     constructor(content: string, filename: string = "content") {
         super(
             new Map([
-                [filename, new File([content], filename, { type: "text/plain" })],
+                [
+                    filename,
+                    new File([content], filename, { type: "text/plain" }),
+                ],
             ]),
         );
     }

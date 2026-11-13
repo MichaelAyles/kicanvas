@@ -7,6 +7,7 @@
 import { assert } from "chai";
 import * as board from "../../src/kicad/board";
 import * as common from "../../src/kicad/common";
+import { assert_deep_partial } from "../utilities";
 
 import empty_pcb_src from "./files/empty.kicad_pcb";
 import properties_pcb_src from "./files/properties.kicad_pcb";
@@ -639,7 +640,8 @@ suite("kicad.board.KicadPCB(): board parsing", function () {
         const poly1 = pcb.drawings[0]!;
 
         assert(poly1 instanceof board.GrPoly);
-        assert.deepInclude(poly1, {
+        // Partial match: arcs also carry the fork's _raw_expr copy data
+        assert_deep_partial(poly1, {
             pts: [
                 {
                     start: { x: 0, y: 0 },
@@ -652,7 +654,7 @@ suite("kicad.board.KicadPCB(): board parsing", function () {
             layer: "F.Cu",
             width: 0.2,
             fill: "none",
-        } as Partial<board.GrPoly>);
+        });
     });
 });
 

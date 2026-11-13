@@ -128,7 +128,7 @@ export abstract class KCViewerAppElement<
                     }
                     break;
                 case "flip_view":
-                    this.#viewer_elm.viewer.flip_view();
+                    this.viewer_elm.viewer.flip_view();
                     break;
                 default:
                     console.warn("Unknown button", e);
@@ -251,7 +251,7 @@ export abstract class KCViewerAppElement<
 
         if (
             controlslist["flipview"] &&
-            this.#viewer_elm instanceof KCBoardViewerElement
+            this.viewer_elm instanceof KCBoardViewerElement
         ) {
             top_toolbar_buttons.push(
                 html`<kc-ui-button
